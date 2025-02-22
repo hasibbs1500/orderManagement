@@ -1,8 +1,10 @@
 package services
 
 import (
+	"errors"
 	"github.com/hasib-003/orderManagement/internal/models"
 	"github.com/hasib-003/orderManagement/internal/repositories"
+	"github.com/hasib-003/orderManagement/utils"
 )
 
 type OrderServiceInterface interface {
@@ -20,17 +22,12 @@ func NewOrderService(repo *repositories.OrderRepository) *OrderService {
 	}
 }
 func (service *OrderService) CreateOrder(order *models.Order) (*models.Order, error) {
-	if order.RecipientCity == 1 {
-		if order.ItemWeight <= 0.5 {
-			order.DeliveryFee = 60
-		} else if order.ItemWeight > 0.5 && order.ItemWeight <= 1 {
-			order.DeliveryFee = 70
-		} else {
-			order.DeliveryFee = 70 + ((order.ItemWeight - 1) * 15)
-		}
-	} else {
-		order.DeliveryFee = 100 + ((order.ItemWeight - 1) * 15)
+
+	if !utils.ValidatePhoneNumber(order.RecipientPhone) {
+		return nil, errors.New("invalid phone number")
 	}
+	order.DeliveryFee = utils.CalculateDeliveryFee(order.RecipientCity, order.ItemWeight)
+
 	order.CODFee = order.AmountToCollect * 0.01
 	err := service.repo.CreateOrder(order)
 	if err != nil {
